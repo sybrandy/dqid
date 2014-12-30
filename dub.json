@@ -1,0 +1,11 @@
+{
+	"name": "dqid",
+	"description": "A simple work queue written in D.",
+	"copyright": "Copyright © 2014, dev",
+	"authors": ["dev"],
+	"dependencies": {
+		"vibe-d": "==0.7.21",
+        "unit-threaded": ">=0.4.3"
+	},
+	"versions": ["VibeDefaultMain"]
+}
