@@ -3,7 +3,8 @@ import std.stdio;
 
 import vibe.d;
 
-shared size_t numElems = 2;
+shared size_t numElems;
+shared size_t modulus;
 shared string[] q;
 shared size_t pIdx, cIdx, qSize;
 shared Lock l;
@@ -13,8 +14,12 @@ shared static this()
     import vibe.core.args;
     l = new Lock();
 
-    getOption("size", &numElems, "The size of the queue.");
+    int pow = 12;
+    getOption("size", &pow, "The size of the queue. (E.g. 2^n where n = 0-32 or 64)");
     if (!finalizeCommandLineOptions()) return;
+    pow = (pow == 0 || pow == size_t.sizeof) ? size_t.sizeof - 1 : pow;
+    numElems = 2 ^^ pow;
+    modulus = (2 ^^ pow) - 1;
     q.length = numElems;
     writeln("Size of the queue: ", numElems);
 
@@ -54,7 +59,7 @@ class QueueInterface : QueueAPI
         {
             if (qSize > 0)
             {
-                cIdx = (cIdx + 1) % numElems;
+                cIdx = (cIdx + 1) & modulus;
                 qSize = qSize - 1;
                 return q[cIdx];
             }
@@ -71,7 +76,7 @@ class QueueInterface : QueueAPI
         {
             if (qSize < numElems)
             {
-                pIdx = (pIdx + 1) % numElems;
+                pIdx = (pIdx + 1) & modulus;
                 q[pIdx] = msg;
                 qSize = qSize + 1;
             }
