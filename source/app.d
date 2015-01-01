@@ -1,12 +1,16 @@
-import std.concurrency;
 import std.stdio;
 
 import vibe.d;
 
+struct Queue
+{
+    string[] q;
+    size_t pIdx, cIdx, qSize;
+}
+
+shared Queue currQueue;
 shared size_t numElems;
 shared size_t modulus;
-shared string[] q;
-shared size_t pIdx, cIdx, qSize;
 shared Lock l;
 
 shared static this()
@@ -20,7 +24,7 @@ shared static this()
     pow = (pow == 0 || pow == size_t.sizeof) ? size_t.sizeof - 1 : pow;
     numElems = 2 ^^ pow;
     modulus = (2 ^^ pow) - 1;
-    q.length = numElems;
+    currQueue.q.length = numElems;
     writeln("Size of the queue: ", numElems);
 
     auto router = new URLRouter;
@@ -57,11 +61,11 @@ class QueueInterface : QueueAPI
     {
         synchronized(l)
         {
-            if (qSize > 0)
+            if (currQueue.qSize > 0)
             {
-                cIdx = (cIdx + 1) & modulus;
-                qSize = qSize - 1;
-                return q[cIdx];
+                currQueue.cIdx = (currQueue.cIdx + 1) & modulus;
+                currQueue.qSize = currQueue.qSize - 1;
+                return currQueue.q[currQueue.cIdx];
             }
             else
             {
@@ -74,11 +78,11 @@ class QueueInterface : QueueAPI
     {
         synchronized(l)
         {
-            if (qSize < numElems)
+            if (currQueue.qSize < numElems)
             {
-                pIdx = (pIdx + 1) & modulus;
-                q[pIdx] = msg;
-                qSize = qSize + 1;
+                currQueue.pIdx = (currQueue.pIdx + 1) & modulus;
+                currQueue.q[currQueue.pIdx] = msg;
+                currQueue.qSize = currQueue.qSize + 1;
             }
             else
             {
@@ -89,7 +93,7 @@ class QueueInterface : QueueAPI
 
     Stats stats()
     {
-        return Stats(qSize);
+        return Stats(currQueue.qSize);
     }
 }
 
